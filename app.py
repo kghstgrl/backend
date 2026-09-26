@@ -27,6 +27,37 @@ def receive_season():
     except IOError as e:
         return jsonify({"message": f"Ошибка при записи файла: {e}"}), 500
 
+@app.route("/api/get-seasons-by-date", methods=["GET"])
+def get_seasons_by_date():
+    target_date = request.args.get("date", "").strip()
+
+    if not target_date:
+        return jsonify({"message": "Дата не может быть пустой!"}), 400
+
+    if not os.path.exists(FILE_PATH):
+        return jsonify({"message": "Файл data.txt ещё не найден."}), 200
+
+    try:
+        with open(FILE_PATH, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        seasons_found = []
+        for line in lines:
+            if not line.strip():
+                continue
+            if target_date in line and "Время года:" in line:
+                parts = line.split("Время года:")
+                if len(parts) > 1:
+                    seasons_found.append(parts[1].strip())
+
+        if not seasons_found:
+            return jsonify({"message": f"За дату {target_date} записей не найдено."}), 200
+
+        return jsonify({"message": "\n".join(seasons_found)}), 200
+
+    except IOError as e:
+        return jsonify({"message": f"Ошибка при чтении файла: {e}"}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
